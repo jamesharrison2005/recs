@@ -1,0 +1,15 @@
+C:\dev\recs\src\Recs.Application\bin\Debug\net10.0\Recs.Application.deps.json
+C:\dev\recs\src\Recs.Application\bin\Debug\net10.0\Recs.Application.dll
+C:\dev\recs\src\Recs.Application\bin\Debug\net10.0\Recs.Application.pdb
+C:\dev\recs\src\Recs.Application\bin\Debug\net10.0\Recs.Domain.dll
+C:\dev\recs\src\Recs.Application\bin\Debug\net10.0\Recs.Domain.pdb
+C:\dev\recs\src\Recs.Application\obj\Debug\net10.0\Recs.Application.csproj.AssemblyReference.cache
+C:\dev\recs\src\Recs.Application\obj\Debug\net10.0\Recs.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\dev\recs\src\Recs.Application\obj\Debug\net10.0\Recs.Application.AssemblyInfoInputs.cache
+C:\dev\recs\src\Recs.Application\obj\Debug\net10.0\Recs.Application.AssemblyInfo.cs
+C:\dev\recs\src\Recs.Application\obj\Debug\net10.0\Recs.Application.csproj.CoreCompileInputs.cache
+C:\dev\recs\src\Recs.Application\obj\Debug\net10.0\Recs.App.8F1C9E66.Up2Date
+C:\dev\recs\src\Recs.Application\obj\Debug\net10.0\Recs.Application.dll
+C:\dev\recs\src\Recs.Application\obj\Debug\net10.0\refint\Recs.Application.dll
+C:\dev\recs\src\Recs.Application\obj\Debug\net10.0\Recs.Application.pdb
+C:\dev\recs\src\Recs.Application\obj\Debug\net10.0\ref\Recs.Application.dll

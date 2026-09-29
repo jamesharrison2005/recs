@@ -1,0 +1,11 @@
+C:\dev\recs\src\Recs.Domain\bin\Debug\net10.0\Recs.Domain.deps.json
+C:\dev\recs\src\Recs.Domain\bin\Debug\net10.0\Recs.Domain.dll
+C:\dev\recs\src\Recs.Domain\bin\Debug\net10.0\Recs.Domain.pdb
+C:\dev\recs\src\Recs.Domain\obj\Debug\net10.0\Recs.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\dev\recs\src\Recs.Domain\obj\Debug\net10.0\Recs.Domain.AssemblyInfoInputs.cache
+C:\dev\recs\src\Recs.Domain\obj\Debug\net10.0\Recs.Domain.AssemblyInfo.cs
+C:\dev\recs\src\Recs.Domain\obj\Debug\net10.0\Recs.Domain.csproj.CoreCompileInputs.cache
+C:\dev\recs\src\Recs.Domain\obj\Debug\net10.0\Recs.Domain.dll
+C:\dev\recs\src\Recs.Domain\obj\Debug\net10.0\refint\Recs.Domain.dll
+C:\dev\recs\src\Recs.Domain\obj\Debug\net10.0\Recs.Domain.pdb
+C:\dev\recs\src\Recs.Domain\obj\Debug\net10.0\ref\Recs.Domain.dll
