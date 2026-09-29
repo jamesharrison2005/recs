@@ -10,6 +10,14 @@ public class User
     public UserPreferences Preferences { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
 
+    /// <summary>
+    /// Used by EF Core to materialise a <see cref="User"/> from the database,
+    /// bypassing the validating constructor. Not for application use.
+    /// </summary>
+    private User()
+    {
+    }
+
     public User(
         string id,
         string username,
