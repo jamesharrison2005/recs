@@ -12,6 +12,14 @@ public class Rating
     public string? Review { get; private set; }
     public DateTimeOffset Timestamp { get; private set; }
 
+    /// <summary>
+    /// Used by EF Core to materialise a <see cref="Rating"/> from the database,
+    /// bypassing the validating constructor. Not for application use.
+    /// </summary>
+    private Rating()
+    {
+    }
+
     public Rating(
         string id,
         string userId,

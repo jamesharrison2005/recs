@@ -18,6 +18,14 @@ public class Item
     public DateTimeOffset? EventEnd { get; private set; }
     public bool IsActive { get; private set; }
 
+    /// <summary>
+    /// Used by EF Core to materialise an <see cref="Item"/> from the database,
+    /// bypassing the validating constructor. Not for application use.
+    /// </summary>
+    private Item()
+    {
+    }
+
     public Item(
         string id,
         string name,
