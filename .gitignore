@@ -486,8 +486,5 @@ $RECYCLE.BIN/
 *.db-shm
 *.db-wal
 
-# json files
-*.json
-
 # data/ directory
 data/
