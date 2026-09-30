@@ -7,12 +7,7 @@ using Recs.Seeder;
 
 try
 {
-    var configuration = new ConfigurationBuilder()
-        .SetBasePath(AppContext.BaseDirectory)
-        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-        .AddEnvironmentVariables()
-        .AddCommandLine(args)
-        .Build();
+    var configuration = SeedConfiguration.Build(args);
 
     var options = SeedOptions.FromConfiguration(configuration);
 
