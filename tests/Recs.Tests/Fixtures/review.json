@@ -1,0 +1,18 @@
+{"review_id":"rev-001","user_id":"user-1","business_id":"biz-001","stars":5.0,"text":"Best hot chicken in the city.","date":"2019-03-15 21:07:26","timestamp":"2019-03-15 21:07:26"}
+{"review_id":"rev-002","user_id":"user-1","business_id":"biz-002","stars":4.0,"text":"Solid brisket, worth the queue.","date":"2019-04-02 18:30:00","timestamp":"2019-04-02 18:30:00"}
+{"review_id":"rev-003","user_id":"user-1","business_id":"biz-003","stars":4.5,"text":"Splendid, a little pricey.","date":"2019-05-11 20:15:00","timestamp":"2019-05-11 20:15:00"}
+{"review_id":"rev-004","user_id":"user-2","business_id":"biz-001","stars":4.0,"text":"Good, but the slaw is heavy.","date":"2019-03-20 19:00:00","timestamp":"2019-03-20 19:00:00"}
+{"review_id":"rev-005","user_id":"user-2","business_id":"biz-002","stars":5.0,"text":"Worth every penny.","date":"2019-04-05 12:00:00","timestamp":"2019-04-05 12:00:00"}
+{"review_id":"rev-006","user_id":"user-2","business_id":"biz-004","stars":3.5,"text":"Fine breakfast, nothing special.","date":"2019-06-01 09:00:00","timestamp":"2019-06-01 09:00:00"}
+{"review_id":"rev-007","user_id":"user-3","business_id":"biz-001","stars":3.0,"text":"Overrated to me.","date":"2019-03-25 17:45:00","timestamp":"2019-03-25 17:45:00"}
+{"review_id":"rev-008","user_id":"user-3","business_id":"biz-003","stars":5.0,"text":"The desserts alone are worth it.","date":"2019-06-10 21:00:00","timestamp":"2019-06-10 21:00:00"}
+{"review_id":"rev-009","user_id":"user-3","business_id":"biz-004","stars":4.0,"text":"Cosy, great biscuits.","date":"2019-06-12 08:30:00","timestamp":"2019-06-12 08:30:00"}
+{"review_id":"rev-010","user_id":"user-4","business_id":"biz-009","stars":4.0,"text":"Only one rating, so this user gets dropped.","date":"2019-07-01 22:00:00","timestamp":"2019-07-01 22:00:00"}
+{"review_id":"rev-011","user_id":"user-1","business_id":"biz-001","stars":2.0,"text":"A second review of the same business by the same user.","date":"2019-08-01 22:00:00","timestamp":"2019-08-01 22:00:00"}
+{"review_id":"rev-012","user_id":"user-1","business_id":"biz-005","stars":5.0,"text":"Business has no coordinates, so it is never loaded.","date":"2019-08-02 22:00:00","timestamp":"2019-08-02 22:00:00"}
+{"review_id":"rev-013","user_id":"user-1","business_id":"biz-006","stars":5.0,"text":"Business has out of range coordinates.","date":"2019-08-03 22:00:00","timestamp":"2019-08-03 22:00:00"}
+{"review_id":"rev-014","user_id":"user-1","business_id":"biz-007","stars":5.0,"text":"Business is not a restaurant.","date":"2019-08-04 22:00:00","timestamp":"2019-08-04 22:00:00"}
+{"review_id":"rev-015","user_id":"user-1","business_id":"biz-008","stars":5.0,"text":"Business is in another city.","date":"2019-08-05 22:00:00","timestamp":"2019-08-05 22:00:00"}
+{"review_id":"rev-016","user_id":"user-1","business_id":"biz-002","stars":0,"text":"Zero stars is outside the domain range.","date":"2019-08-06 22:00:00","timestamp":"2019-08-06 22:00:00"}
+{"review_id":"rev-017","user_id":"user-1","business_id":"biz-002","stars":6,"text":"Six stars is outside the domain range.","date":"2019-08-07 22:00:00","timestamp":"2019-08-07 22:00:00"}
+{"review_id":"rev-018","user_id":"user-5","business_id":"biz-009","stars":2.0,"text":"Second rating on a business that still only has two.","date":"2019-09-01 22:00:00","timestamp":"2019-09-01 22:00:00"}
