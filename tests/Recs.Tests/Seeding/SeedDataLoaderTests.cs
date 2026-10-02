@@ -47,6 +47,8 @@ public class SeedDataLoaderTests
         // An item nobody rated cannot inform a recommendation, so it is not worth storing.
         Assert.Null(await context.Items.FindAsync("yelp-biz-010"));
         Assert.Equal(await context.Items.CountAsync(), summary.ItemsInDataset);
+        Assert.Equal(await context.Users.CountAsync(), summary.UsersInDataset);
+        Assert.Equal(await context.Ratings.CountAsync(), summary.RatingsInDataset);
         Assert.DoesNotContain(await context.Ratings.ToListAsync(), r => r.ItemId == "yelp-biz-010");
     }
 
@@ -189,6 +191,22 @@ public class SeedDataLoaderTests
     }
 
     [Fact]
+    public async Task Run_ReportsARepeatedUserItemPairAsASkipNotAsAnExistingRow()
+    {
+        using var database = new SqliteMigratedTestDatabase();
+
+        var summary = await RunAsync(database, SeedFixture.CreateOptions());
+
+        await using var context = database.CreateContext();
+
+        // rev-011 is user-1 reviewing biz-001 a second time. Nothing was in the database to
+        // collide with, so it is a duplicate within the source file and must not be reported as a
+        // row that was already there: doing so overstates the count by one per repeated pair.
+        Assert.Equal(1, summary.Skipped[SeedSkipReason.DuplicateInFile]);
+        Assert.Equal(0, summary.AlreadyInDatabase);
+    }
+
+    [Fact]
     public async Task Run_CreatesUsersWithIdDerivedUsernames()
     {
         using var database = new SqliteMigratedTestDatabase();
@@ -272,6 +290,24 @@ public class SeedDataLoaderTests
         Assert.Equal(5, await verifyContext.Items.CountAsync());
         Assert.Equal(first.UsersInserted, await verifyContext.Users.CountAsync());
         Assert.Equal(first.RatingsInserted, await verifyContext.Ratings.CountAsync());
+
+        // Nothing was skipped as malformed or density filtered on a re-run over unchanged input. The
+        // two out-of-range-star rows are the same rows the first run skipped, because the tally
+        // pass reads the whole file both times. rev-011 is not a repeat this time: the rating it
+        // resolves to is in the database, so it is recognised as already present instead.
+        Assert.Equal(0, second.Skipped[SeedSkipReason.DensityFiltered]);
+        Assert.Equal(2, second.Skipped[SeedSkipReason.OutOfRangeStars]);
+        Assert.Equal(0, second.Skipped[SeedSkipReason.DuplicateInFile]);
+
+        // Every user, item and rating the second run offered was recognised as already present.
+        Assert.Equal(5 + 5 + 12, second.AlreadyInDatabase);
+
+        // The dataset is reported in full on a run that inserted nothing, so the summary still
+        // describes what is actually loaded.
+        Assert.Equal(first.ItemsInDataset, second.ItemsInDataset);
+        Assert.Equal(first.UsersInDataset, second.UsersInDataset);
+        Assert.Equal(first.RatingsInDataset, second.RatingsInDataset);
+        Assert.Equal(first.AverageRatingsPerUser, second.AverageRatingsPerUser, 6);
     }
 
     [Fact]
@@ -305,6 +341,12 @@ public class SeedDataLoaderTests
         // It must not re-insert the three items the first run already wrote.
         Assert.Equal(2, second.ItemsInserted);
         Assert.Equal(5, await context.Items.CountAsync());
+
+        // The rows the first run wrote are recognised as already present rather than re-inserted.
+        // The counter spans items, users and ratings together, so it is only asserted to be
+        // non-zero here; Run_SecondTime_InsertsNothingAndIsIdempotent pins down its exact value
+        // on a run where every row is a duplicate.
+        Assert.True(second.AlreadyInDatabase > 0);
     }
 
     [Fact]

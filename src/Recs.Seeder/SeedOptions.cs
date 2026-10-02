@@ -16,11 +16,17 @@ public sealed class SeedOptions
     /// <summary>Path to the Yelp review JSON file (line-delimited).</summary>
     public string ReviewFilePath { get; set; } = string.Empty;
 
-    /// <summary>Only keep businesses whose Yelp <c>city</c> matches, case-insensitively.</summary>
-    public string City { get; set; } = "Nashville, TN";
+    /// <summary>
+    /// Only keep businesses whose Yelp <c>city</c> matches, case-insensitively. Yelp stores the
+    /// city name alone, so this is a bare name like "Nashville", not "Nashville, TN".
+    /// </summary>
+    public string City { get; set; } = "Nashville";
 
-    /// <summary>Optional second filter. When set, businesses must match both city and state.</summary>
-    public string? State { get; set; }
+    /// <summary>
+    /// Optional second filter. When set, businesses must match both city and state. Yelp's
+    /// <c>state</c> column holds the abbreviation, so this is "TN".
+    /// </summary>
+    public string? State { get; set; } = "TN";
 
     public int MaxBusinesses { get; set; } = 5_000;
 
@@ -49,8 +55,8 @@ public sealed class SeedOptions
         {
             BusinessFilePath = Read(section, nameof(BusinessFilePath), string.Empty),
             ReviewFilePath = Read(section, nameof(ReviewFilePath), string.Empty),
-            City = Read(section, nameof(City), "Nashville, TN"),
-            State = Read(section, nameof(State), string.Empty) is { Length: > 0 } state ? state : null,
+            City = Read(section, nameof(City), "Nashville"),
+            State = Read(section, nameof(State), string.Empty) is { Length: > 0 } state ? state : "TN",
             MaxBusinesses = ReadInt(section, nameof(MaxBusinesses), 5_000),
             MaxUsers = ReadInt(section, nameof(MaxUsers), 20_000),
             MaxReviews = ReadInt(section, nameof(MaxReviews), 200_000),

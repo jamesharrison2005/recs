@@ -18,10 +18,19 @@ namespace Recs.Seeder;
 /// </summary>
 public sealed class SeedDataLoader
 {
+    /// <summary>
+    /// Rows handled between progress reports. A full pass over the review file is minutes of
+    /// silent work, so the passes report progress rather than looking hung.
+    /// </summary>
+    private const long ProgressInterval = 500_000;
+
     private readonly RecsDbContext _context;
     private readonly SeedOptions _options;
     private readonly SeedRunSummary _summary = new();
     private readonly Action<string> _log;
+
+    /// <summary>Row count at the last progress report, so reports fire on the interval alone.</summary>
+    private long _lastProgressAt;
 
     public SeedDataLoader(RecsDbContext context, SeedOptions options, Action<string>? log = null)
     {
@@ -58,7 +67,26 @@ public sealed class SeedDataLoader
             survivingUsers,
             cancellationToken);
 
+        // The density filter fixed the shape of the dataset before either insert ran, but which
+        // rows reach the database is only settled once inserts are done: a user pushed past
+        // MaxUsers is dropped here, and its ratings are dropped with it. Taking the counts off
+        // the database is what keeps a second run from reporting an empty dataset for rows it
+        // deliberately left alone.
+        await PopulateDatasetCountsAsync(cancellationToken);
+
         return _summary;
+    }
+
+    /// <summary>
+    /// Records what the loaded dataset now contains, straight from the database. The alternative,
+    /// counting rows as they are offered for insert, reports the candidate set rather than the
+    /// loaded one, and reports nothing at all on a run where everything was already present.
+    /// </summary>
+    private async Task PopulateDatasetCountsAsync(CancellationToken cancellationToken)
+    {
+        _summary.UsersInDataset = await _context.Users.CountAsync(cancellationToken);
+        _summary.ItemsInDataset = await _context.Items.CountAsync(cancellationToken);
+        _summary.RatingsInDataset = await _context.Ratings.CountAsync(cancellationToken);
     }
 
     /// <summary>
@@ -75,6 +103,7 @@ public sealed class SeedDataLoader
             (business, ct) =>
             {
                 _summary.BusinessesRead++;
+                Progress();
 
                 if (!BusinessMapper.IsRestaurant(business))
                     return Task.CompletedTask;
@@ -123,7 +152,7 @@ public sealed class SeedDataLoader
         {
             if (existingItemIds.Contains(item.Id))
             {
-                _summary.Skipped.Count(SeedSkipReason.DuplicateSkipped);
+                _summary.CountAlreadyInDatabase();
                 continue;
             }
 
@@ -133,8 +162,7 @@ public sealed class SeedDataLoader
         }
 
         _summary.ItemsInserted += await FlushAsync(_context.Items, buffer, cancellationToken);
-        _summary.ItemsInDataset = candidates.Count;
-        _log($"Inserted {_summary.ItemsInserted} items.");
+        _log(Reported("items", _summary.ItemsInserted));
     }
 
     /// <summary>
@@ -152,6 +180,7 @@ public sealed class SeedDataLoader
             (review, ct) =>
             {
                 _summary.ReviewsRead++;
+                Progress();
 
                 if (string.IsNullOrWhiteSpace(review.UserId) || string.IsNullOrWhiteSpace(review.BusinessId))
                 {
@@ -268,9 +297,6 @@ public sealed class SeedDataLoader
         foreach (var itemId in candidates.Keys.Where(id => !items.Contains(id)).ToList())
             candidates.Remove(itemId);
 
-        _summary.UsersInDataset = users.Count;
-        _summary.ItemsInDataset = candidates.Count;
-
         _log($"Density filter (min {_options.MinRatingsPerUser}/user, {_options.MinRatingsPerItem}/item) " +
              $"kept {users.Count} users and {candidates.Count} items.");
 
@@ -303,6 +329,10 @@ public sealed class SeedDataLoader
             _options.ReviewFilePath,
             async (review, ct) =>
             {
+                // This pass does not accumulate ReviewsRead: the tally pass already counted every
+                // line, and counting again would double the figure the summary reports.
+                Progress();
+
                 if (string.IsNullOrWhiteSpace(review.UserId) || string.IsNullOrWhiteSpace(review.BusinessId))
                     return;
 
@@ -326,7 +356,7 @@ public sealed class SeedDataLoader
                 {
                     if (existingUserIds.Contains(userId))
                     {
-                        _summary.Skipped.Count(SeedSkipReason.DuplicateSkipped);
+                        _summary.CountAlreadyInDatabase();
                     }
                     else if (seenUsers.Count > _options.MaxUsers)
                     {
@@ -348,9 +378,23 @@ public sealed class SeedDataLoader
                 if (ReviewMapper.Map(review, itemId).Rating is not { } rating)
                     return;
 
-                if (existingRatingIds.Contains(rating.Id) || !seenRatings.Add(rating.Id))
+                if (existingRatingIds.Contains(rating.Id))
                 {
-                    _summary.Skipped.Count(SeedSkipReason.DuplicateSkipped);
+                    // Removed from the in-run set as well, because it is already persisted and so
+                    // was never staged. Without this, a second review by the same user of the same
+                    // business later in the file would be rejected by seenRatings and miscounted as
+                    // "already in database" a second time, overstating it by one per repeated pair.
+                    seenRatings.Remove(rating.Id);
+                    _summary.CountAlreadyInDatabase();
+                    return;
+                }
+
+                if (!seenRatings.Add(rating.Id))
+                {
+                    // A repeat of the same business within this run. Distinct from a row already in
+                    // the database: nothing was skipped for the database's sake, and reporting it
+                    // as AlreadyInDatabase would imply a lookup that never happened.
+                    _summary.Skipped.Count(SeedSkipReason.DuplicateInFile);
                     return;
                 }
 
@@ -375,12 +419,33 @@ public sealed class SeedDataLoader
         _summary.UsersInserted += await FlushAsync(_context.Users, userBuffer, cancellationToken);
         _summary.RatingsInserted += await FlushAsync(_context.Ratings, ratingBuffer, cancellationToken);
 
-        // An item left with no surviving raters was already removed by the density filter, so the
-        // surviving rating count is a real property of the loaded dataset.
-        _summary.RatingsInDataset = seenRatings.Count;
-        _summary.UsersInDataset = Math.Min(_summary.UsersInDataset, _options.MaxUsers);
+        _log($"{Reported("users", _summary.UsersInserted)}, {Reported("ratings", _summary.RatingsInserted)}.");
+    }
 
-        _log($"Inserted {_summary.UsersInserted} users and {_summary.RatingsInserted} ratings.");
+    /// <summary>
+    /// Phrases an insert count so a step that found nothing new still reports a result. "Inserted
+    /// 0 items." reads like the run stopped there, which is precisely the wrong impression when
+    /// every candidate was already present.
+    /// </summary>
+    private static string Reported(string entity, int inserted)
+        => inserted == 0
+            ? $"inserted 0 {entity}, all already in database"
+            : $"inserted {inserted} {entity}";
+
+    /// <summary>
+    /// Logs the number of rows handled so far, every <see cref="ProgressInterval"/> rows. Tracking
+    /// both business and review rows under one counter keeps the reporter to a single field; the
+    /// phase name in the message says which pass is running.
+    /// </summary>
+    private void Progress(string phase = "rows")
+    {
+        var seen = _summary.BusinessesRead + _summary.ReviewsRead;
+
+        if (seen < _lastProgressAt + ProgressInterval)
+            return;
+
+        _lastProgressAt = seen;
+        _log($"  ... {seen:N0} {phase} processed");
     }
 
     /// <summary>

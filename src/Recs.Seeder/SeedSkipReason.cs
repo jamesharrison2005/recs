@@ -24,8 +24,12 @@ public enum SeedSkipReason
     /// <summary>The rating referenced a user or item that was never loaded.</summary>
     UnknownUserOrItem,
 
-    /// <summary>A record with this id was already in the database.</summary>
-    DuplicateSkipped
+    /// <summary>
+    /// The source contained the same (user, item) pair more than once. The database enforces one
+    /// rating per pair, so all but the first are dropped. Distinct from a row that is already in
+    /// the database: nothing is being compared against what was loaded.
+    /// </summary>
+    DuplicateInFile
 }
 
 /// <summary>Accumulates skip counts by reason.</summary>

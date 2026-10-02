@@ -27,6 +27,20 @@ public sealed class SeedRunSummary
     public SkipCounter Skipped { get; } = new();
 
     /// <summary>
+    /// Rows that were already present and therefore not inserted again. Tracked separately from
+    /// <see cref="Skipped"/> because it is not a data quality problem: it is what a re-run over
+    /// unchanged input is supposed to produce, and lumping it in with malformed rows hides which
+    /// of the two actually happened.
+    /// </summary>
+    public long AlreadyInDatabase { get; private set; }
+
+    /// <summary>
+    /// Counts a row that was already present. The same overload shape as
+    /// <see cref="SkipCounter.Count"/> so call sites read consistently.
+    /// </summary>
+    public void CountAlreadyInDatabase(long amount = 1) => AlreadyInDatabase += amount;
+
+    /// <summary>
     /// Average ratings per user across the loaded dataset. Reported against the whole dataset
     /// rather than only this run's inserts, so a second run still shows the real density.
     /// </summary>
@@ -41,11 +55,12 @@ public sealed class SeedRunSummary
         sb.AppendLine("=== Seed run summary ===");
         sb.AppendLine($"  Read:     {BusinessesRead} businesses, {ReviewsRead} reviews");
         sb.AppendLine("  Dataset:");
-        sb.AppendLine($"    users     {UsersInDataset} ({UsersInserted} inserted this run)");
-        sb.AppendLine($"    items     {ItemsInDataset} ({ItemsInserted} inserted this run)");
-        sb.AppendLine($"    ratings   {RatingsInDataset} ({RatingsInserted} inserted this run)");
+        sb.AppendLine($"    users     {UsersInDataset} ({DescribeInserted(this, UsersInserted)})");
+        sb.AppendLine($"    items     {ItemsInDataset} ({DescribeInserted(this, ItemsInserted)})");
+        sb.AppendLine($"    ratings   {RatingsInDataset} ({DescribeInserted(this, RatingsInserted)})");
         sb.AppendLine($"    avg ratings per user: {AverageRatingsPerUser:F2}");
 
+        sb.AppendLine($"  Already in database: {AlreadyInDatabase}");
         sb.AppendLine($"  Skipped:  {Skipped.Total} total");
         foreach (var reason in Enum.GetValues<SeedSkipReason>())
         {
@@ -58,6 +73,19 @@ public sealed class SeedRunSummary
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Phrases an insert count for the summary. Spelled out rather than collapsed to a bare number
+    /// so that a run which inserted nothing reads as an outcome instead of looking like a stall.
+    /// A run that inserted nothing and saw no rows at all is described as having started rather
+    /// than as finding everything present: nothing was found, because nothing was read.
+    /// </summary>
+    private static string DescribeInserted(SeedRunSummary summary, int inserted) => inserted switch
+    {
+        > 0 => $"{inserted} inserted this run",
+        _ when summary.BusinessesRead == 0 && summary.ReviewsRead == 0 => "run did not start",
+        _ => "inserted 0, already present"
+    };
+
     private static string Describe(SeedSkipReason reason) => reason switch
     {
         SeedSkipReason.Malformed => "malformed line",
@@ -66,7 +94,7 @@ public sealed class SeedRunSummary
         SeedSkipReason.OutOfRangeStars => "stars out of range",
         SeedSkipReason.DensityFiltered => "below density filter",
         SeedSkipReason.UnknownUserOrItem => "unknown user or item",
-        SeedSkipReason.DuplicateSkipped => "already in database",
+        SeedSkipReason.DuplicateInFile => "repeated user/item pair",
         _ => reason.ToString()
     };
 }
