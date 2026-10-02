@@ -5,6 +5,7 @@
     <Project Path="src/Recs.Domain/Recs.Domain.csproj" />
     <Project Path="src/Recs.Infrastructure/Recs.Infrastructure.csproj" />
     <Project Path="src/Recs.ML/Recs.ML.csproj" />
+    <Project Path="src/Recs.Seeder/Recs.Seeder.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Recs.Tests/Recs.Tests.csproj" />

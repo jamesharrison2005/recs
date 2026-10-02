@@ -20,10 +20,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Microsoft.NET.Sdk does not copy .json to the build output for a non-web project,
+         so fixtures are copied explicitly for tests to find them. -->
+    <Content Include="Fixtures\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Recs.Domain\Recs.Domain.csproj" />
     <ProjectReference Include="..\..\src\Recs.Application\Recs.Application.csproj" />
     <ProjectReference Include="..\..\src\Recs.Infrastructure\Recs.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Recs.ML\Recs.ML.csproj" />
+    <ProjectReference Include="..\..\src\Recs.Seeder\Recs.Seeder.csproj" />
   </ItemGroup>
 
 </Project>
