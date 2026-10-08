@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Recs.Application\Recs.Application.csproj" />
+    <ProjectReference Include="..\Recs.Infrastructure\Recs.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
