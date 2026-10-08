@@ -1,4 +1,7 @@
+using Recs.Application.Common.Interfaces;
+using Recs.Application.Services;
 using Recs.Infrastructure;
+using Recs.Api.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<IPredictionService, PredictionService>();
+builder.Services.AddScoped<IRecommendationProvider, Recs.ML.ColdStart.CollaborativeFilteringProvider>();
 
 var app = builder.Build();
 
@@ -21,6 +26,8 @@ var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
+
+app.MapRecommendations();
 
 app.MapGet("/weatherforecast", () =>
 {
