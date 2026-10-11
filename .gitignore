@@ -487,4 +487,6 @@ $RECYCLE.BIN/
 *.db-wal
 
 # data/ directory
-data/
+data/recs-model.zip
+recs.db
+ModelPath
