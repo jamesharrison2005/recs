@@ -31,6 +31,7 @@
     <ProjectReference Include="..\..\src\Recs.Infrastructure\Recs.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Recs.ML\Recs.ML.csproj" />
     <ProjectReference Include="..\..\src\Recs.Seeder\Recs.Seeder.csproj" />
+    <ProjectReference Include="..\..\src\Recs.Api\Recs.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>
