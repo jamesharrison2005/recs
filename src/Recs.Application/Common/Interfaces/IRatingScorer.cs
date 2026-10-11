@@ -1,6 +1,4 @@
-using Recs.ML.Models;
-
-namespace Recs.ML;
+namespace Recs.Application.Common.Interfaces;
 
 public interface IRatingScorer
 {

@@ -1,8 +1,7 @@
 using Recs.Application.Common.Interfaces;
+using Recs.Domain.Enums;
 using Recs.Application.Models;
 using Recs.Domain.Entities;
-using Recs.ML;
-using Recs.ML.ColdStart;
 
 namespace Recs.Application.Services;
 
@@ -62,7 +61,7 @@ public sealed class Recommender : IRecommender
             var fallbackUnrated = fallbackIds.Where(id => !ratedItemIds.Contains(id)).ToList();
             var fallbackItems = await _itemRepo.GetByIdsAsync(fallbackUnrated, ct);
             // Use provider's popularity with filter applied via repo query
-            var popularity = new PopularityFallthroughProvider(_itemRepo); // Need to inject or create; for simplicity use provider directly if it respects filter
+            // Popularity fallback handled via _provider if needed
             // Actually provider uses RecsDbContext; filter handling in fallback requires using item repo with filter
             // Simplified: build fallback from repository results already filtered
             var fallbackResults = fallbackItems
@@ -81,11 +80,11 @@ public sealed class Recommender : IRecommender
         if (filter != null && !string.IsNullOrWhiteSpace(filter.ItemType))
         {
             if (Enum.TryParse<ItemType>(filter.ItemType, true, out var t))
-                return (await _itemRepo.GetByTypeAsync(t, ct)).ToList();
+                return (await _itemRepo.GetByTypeAsync(t, true, ct)).ToList();
             else if (!string.IsNullOrWhiteSpace(filter.ItemType))
-                return (await _itemRepo.GetByCategoryAsync(filter.ItemType, ct)).ToList();
+                return (await _itemRepo.GetByCategoryAsync(filter.ItemType, true, ct)).ToList();
         }
-        return (await _itemRepo.GetAllAsync(ct)).ToList();
+        return (await _itemRepo.GetAllAsync(true, ct)).ToList();
     }
 
     private async Task<List<string>> GetFallbackIdsAsync(ItemFilter? filter, CancellationToken ct)

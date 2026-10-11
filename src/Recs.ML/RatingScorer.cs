@@ -1,4 +1,5 @@
 using Microsoft.ML;
+using Recs.Application.Common.Interfaces;
 using Microsoft.ML.Data;
 using Recs.ML.Models;
 
