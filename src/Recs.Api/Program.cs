@@ -13,7 +13,6 @@ builder.Services.AddScoped<IPredictionService, PredictionService>();
 builder.Services.AddSingleton<Recs.Application.Common.Interfaces.IRatingScorer>(sp => new Recs.ML.RatingScorer(builder.Configuration["ModelPath"]));
 builder.Services.AddScoped<Recs.Application.Common.Interfaces.IRecommender, Recs.Application.Services.Recommender>();
 builder.Services.AddScoped<IRecommendationProvider, Recs.ML.ColdStart.CollaborativeFilteringProvider>();
-builder.Services.AddSingleton<Recs.Application.Common.Interfaces.IRecommendationProvider, Recs.ML.ColdStart.PopularityFallthroughProvider>();
 
 var app = builder.Build();
 
