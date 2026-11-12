@@ -23,9 +23,6 @@ public sealed class ContentBasedProvider : IRecommendationProvider
     public IReadOnlyList<(string ItemId, float Score)> GetRecommendations(string userId, int maxResults = 10)
         => GetContentBased(userId, maxResults);
 
-    public IReadOnlyList<(string ItemId, float Score)> GetCollaborative(string userId, int maxResults = 10)
-        => new List<(string, float)>();
-
     public IReadOnlyList<(string ItemId, float Score)> GetContentBased(string userId, int maxResults = 10)
     {
         var user = _db.Users.FirstOrDefault(u => u.Id == userId);
@@ -78,7 +75,7 @@ public sealed class ContentBasedProvider : IRecommendationProvider
         }
 
         // Location feasibility (if user has home location)
-        if (homeLocation != null && item.Location != null)
+        if (homeLocation != null)
         {
             double distKm = item.Location.DistanceToKm(homeLocation.Value);
             if (prefs.MaxTravelDistanceKm.HasValue && distKm <= prefs.MaxTravelDistanceKm.Value)

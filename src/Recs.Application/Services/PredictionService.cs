@@ -14,15 +14,21 @@ public sealed class PredictionService : IPredictionService
     private readonly IItemRepository _itemRepo;
     private readonly IRatingRepository _ratingRepo;
     private readonly IRecommendationProvider _provider;
+    private readonly IRatingScorer _scorer;
+    private readonly IUserRepository _userRepo;
 
     public PredictionService(
         IItemRepository itemRepo,
         IRatingRepository ratingRepo,
-        IRecommendationProvider provider)
+        IRecommendationProvider provider,
+        IRatingScorer scorer,
+        IUserRepository userRepo)
     {
         _itemRepo = itemRepo;
         _ratingRepo = ratingRepo;
         _provider = provider;
+        _scorer = scorer;
+        _userRepo = userRepo;
     }
 
     public async Task<IReadOnlyList<Item>> PredictAsync(string userId, int n = 10, ItemFilter? filters = null)
@@ -45,42 +51,68 @@ public sealed class PredictionService : IPredictionService
         if (candidates.Count == 0)
             return new List<Item>();
 
-        // 6. Unknown user -> popular items (respecting filter)
-        if (rated.Count == 0)
+        var candidateIds = new HashSet<string>(candidates.Select(i => i.Id), StringComparer.OrdinalIgnoreCase);
+
+        // Decide scoring strategy:
+        // 1. User has ratings + model loaded -> collaborative (Matrix Factorization) batch scores.
+        // 2. Cold start (no ratings / no model / zero scored rows): content-based if the user
+        //    has preferences, otherwise popularity fallthrough.
+        if (rated.Count > 0 && _scorer.IsModelLoaded)
         {
-            var popularIds = _provider.GetPopularityFallback(n * 5)
-                .Select(p => p.ItemId)
-                .Distinct()
-                .ToList();
-            var popularItems = await _itemRepo.GetByIdsAsync(popularIds);
-            return popularItems
-                .Where(i => MatchesType(i, filters?.ItemType))
+            var scores = _scorer.ScoreBatch(userId, candidates.Select(i => i.Id));
+            var ranked = scores
+                .Where(s => candidateIds.Contains(s.ItemId))
+                .OrderByDescending(s => s.Score)
                 .Take(n)
+                .ToList();
+
+            if (ranked.Count > 0)
+                return await OrderByIdsAsync(ranked.Select(r => r.ItemId));
+        }
+
+        // Cold-start path
+        var user = await _userRepo.GetByIdAsync(userId);
+        var prefs = user?.Preferences;
+        var hasPrefs = prefs != null &&
+            ((prefs.PreferredCategories?.Any() ?? false) || (prefs.PreferredTags?.Any() ?? false));
+
+        IReadOnlyList<(string ItemId, float Score)> fallback;
+        if (hasPrefs)
+        {
+            fallback = _provider.GetContentBased(userId, n * 5)
+                .Where(p => candidateIds.Contains(p.ItemId))
+                .OrderByDescending(p => p.Score)
+                .ToList();
+            if (fallback.Count < n)
+            {
+                var popularity = _provider.GetPopularityFallback(n * 5)
+                    .Where(p => candidateIds.Contains(p.ItemId) && !fallback.Any(f => f.ItemId.Equals(p.ItemId, StringComparison.OrdinalIgnoreCase)))
+                    .OrderByDescending(p => p.Score);
+                fallback = fallback.Concat(popularity).ToList();
+            }
+        }
+        else
+        {
+            fallback = _provider.GetPopularityFallback(n * 5)
+                .Where(p => candidateIds.Contains(p.ItemId))
+                .OrderByDescending(p => p.Score)
                 .ToList();
         }
 
-        // 4/5. Score all candidates via collaborative filtering (matrix factorization)
-        // Delegate to provider for efficient batch scoring of user-candidate pairs.
-        var scores = _provider.GetCollaborative(userId, candidates.Count);
+        return await OrderByIdsAsync(fallback.Select(p => p.ItemId).Distinct(StringComparer.OrdinalIgnoreCase).Take(n));
+    }
 
-        // Drop NaN, clamp 1.0-5.0, sort descending
-        var ranked = scores
-            .Where(s => !float.IsNaN(s.Score))
-            .Select(s => new { s.ItemId, Score = Math.Clamp(s.Score, 1.0f, 5.0f) })
-            .OrderByDescending(s => s.Score)
-            .Take(n)
-            .ToList();
+    private async Task<IReadOnlyList<Item>> OrderByIdsAsync(IEnumerable<string> ids)
+    {
+        var idList = ids.ToList();
+        if (idList.Count == 0) return new List<Item>();
 
-        // 6. Return item details
-        var ids = ranked.Select(r => r.ItemId).ToList();
-        var resultItems = await _itemRepo.GetByIdsAsync(ids);
-        var ordered = ids
-            .Select(id => resultItems.FirstOrDefault(i => i.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
+        var items = await _itemRepo.GetByIdsAsync(idList);
+        return idList
+            .Select(id => items.FirstOrDefault(i => i.Id.Equals(id, StringComparison.OrdinalIgnoreCase)))
             .Where(i => i != null)
             .Cast<Item>()
             .ToList();
-
-        return ordered;
     }
 
     private static bool MatchesType(Item item, string? itemType)

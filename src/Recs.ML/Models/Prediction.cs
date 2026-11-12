@@ -8,6 +8,6 @@ namespace Recs.ML.Models;
 /// </summary>
 public class Prediction
 {
-    [ColumnName("score")]
+    [ColumnName("Score")]
     public float Score { get; set; }
 }

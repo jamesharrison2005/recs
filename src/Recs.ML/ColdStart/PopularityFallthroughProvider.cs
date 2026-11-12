@@ -21,11 +21,8 @@ public sealed class PopularityFallthroughProvider : IRecommendationProvider
     public IReadOnlyList<(string ItemId, float Score)> GetRecommendations(string userId, int maxResults = 10)
         => GetPopularityFallback(maxResults);
 
-    public IReadOnlyList<(string ItemId, float Score)> GetCollaborative(string userId, int maxResults = 10)
-        => GetPopularityFallback(maxResults);
-
     public IReadOnlyList<(string ItemId, float Score)> GetContentBased(string userId, int maxResults = 10)
-        => GetPopularityFallback(maxResults);
+        => new List<(string, float)>();
 
     public IReadOnlyList<(string ItemId, float Score)> GetPopularityFallback(int maxResults = 10)
     {

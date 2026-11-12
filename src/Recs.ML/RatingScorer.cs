@@ -38,7 +38,7 @@ public sealed class RatingScorer : IRatingScorer
         {
             var score = predictions[i].Score;
             if (!float.IsNaN(score) && !float.IsInfinity(score))
-                result.Add((candidates[i], score));
+                result.Add((candidates[i], Math.Clamp(score, 1.0f, 5.0f)));
         }
         return result;
     }

@@ -21,8 +21,8 @@ public sealed class Pipeline
     }
 
     /// <summary>
-    /// Build the MLContext + pipeline, but do NOT train yet.
-    /// Call Train() to fit the model on data.
+    /// Build the MLContext + pipeline and fit the MatrixFactorization model on the train split.
+    /// Call Train() to fit the model on data and persist it to disk.
     /// </summary>
     public (ITransformer Model, IDataView TrainSet, IDataView TestSet) BuildPipeline()
     {
@@ -35,14 +35,16 @@ public sealed class Pipeline
         var trainTestSplit = ml.Data.TrainTestSplit(data, testFraction: 0.2, seed: 42);
 
         // 3. MatrixFactorizationTrainer
-        // Mapping string IDs to keys is required for MatrixFactorization
-        var pipeline = ml.Transforms.Conversion.MapValueToKey(nameof(RatingData.UserId))
+        // Copy the label first so the output schema contains a prediction named "Score"
+        // and the original label under "Label" — otherwise both land on "Score".
+        var pipeline = ml.Transforms.CopyColumns("Label", nameof(RatingData.Score))
+            .Append(ml.Transforms.Conversion.MapValueToKey(nameof(RatingData.UserId)))
             .Append(ml.Transforms.Conversion.MapValueToKey(nameof(RatingData.ItemId)))
             .Append(ml.Recommendation().Trainers.MatrixFactorization(new MatrixFactorizationTrainer.Options
             {
                 MatrixColumnIndexColumnName = nameof(RatingData.UserId),
                 MatrixRowIndexColumnName = nameof(RatingData.ItemId),
-                LabelColumnName = nameof(RatingData.Score),
+                LabelColumnName = "Label",
                 NumberOfIterations = 20,
                 ApproximationRank = 50,
                 LearningRate = 0.01f
@@ -71,12 +73,14 @@ public sealed class Pipeline
     }
 
     /// <summary>
-    /// Train the model and persist to disk.
+    /// Train the model, persist it to disk and return the training artifacts so callers
+    /// can run evaluation without training twice.
     /// </summary>
-    public void Train()
+    public (ITransformer Model, IDataView TrainSet, IDataView TestSet) Train()
     {
         var ml = new MLContext(seed: 42);
-        var (model, trainSet, _) = BuildPipeline();
+        var (model, trainSet, testSet) = BuildPipeline();
         ml.Model.Save(model, trainSet.Schema, _modelPath);
+        return (model, trainSet, testSet);
     }
 }
